@@ -1,0 +1,12 @@
+name: curemap-communication-service
+
+services:
+  app_database:
+    image: postgres:latest
+    container_name: curemap-accountservice-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      Database: post
