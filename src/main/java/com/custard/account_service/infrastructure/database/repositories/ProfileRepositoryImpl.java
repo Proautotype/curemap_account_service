@@ -53,6 +53,14 @@ public class ProfileRepositoryImpl implements ProfileRepository {
         }
     }
 
+    @Override
+    @Transactional
+    public void updateProfileAvatar(String profileAvatarS3Key, String userId) {
+        ProfileEntity profile = this.findByUserIdRaw(userId);
+        profile.setProfilePicture(profileAvatarS3Key);
+        profileRepository.save(profile);
+    }
+
 
     private ProfileEntity updateProfile(Profile profile, ProfileEntity profileEntity) {
         if (!profile.getProfilePicture().isBlank()) {
@@ -72,15 +80,6 @@ public class ProfileRepositoryImpl implements ProfileRepository {
 
     @Override
     @Transactional
-    public Profile findById(String id) {
-        ProfileEntity profileEntity = profileRepository
-                .findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Profile not found"));
-        return infrastructureUserMapper.toProfileModel(profileEntity);
-    }
-
-    @Override
-    @Transactional
     public Profile findByUserId(String userId) {
         ProfileEntity profileEntity = profileRepository
                 .findByUser_Id(UUID.fromString(userId))
@@ -88,14 +87,9 @@ public class ProfileRepositoryImpl implements ProfileRepository {
         return infrastructureUserMapper.toProfileModel(profileEntity);
     }
 
-    @Override
-    @Transactional
-    public void deleteById(String id) {
-        try {
-            jpaAddressEntityRepository.deleteById(id);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e, e);
-        }
+    public ProfileEntity findByUserIdRaw(String userId) {
+        return profileRepository
+                .findByUser_Id(UUID.fromString(userId))
+                .orElseThrow(() -> new EntityNotFoundException("Profile not found"));
     }
-
 }

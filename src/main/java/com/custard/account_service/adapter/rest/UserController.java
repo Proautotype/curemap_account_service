@@ -8,6 +8,7 @@ import com.custard.account_service.adapter.mapper.Adapter_UserMapper;
 import com.custard.account_service.application.commands.CreateProfileCommand;
 import com.custard.account_service.application.commands.CreateUserCommand;
 import com.custard.account_service.application.commands.UpdateUserCommand;
+import com.custard.account_service.application.commands.UploadProfileAvatarCommand;
 import com.custard.account_service.application.usecases.*;
 import com.custard.account_service.domain.models.Profile;
 import com.custard.account_service.domain.models.User;
@@ -15,13 +16,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.ByteArrayOutputStream;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,6 +40,8 @@ public class UserController {
     private final CreateProfileUseCase createProfileUsecase;
     private final FindUserByIdUseCase getUserUseCase;
     private final FindProfileByUserIdUseCase findProfileByUserIdUseCase;
+    private final UploadProfileAvatarUseCase uploadProfileAvatarUseCase;
+    private final DownloadProfileAvatarUseCase profileAvatarUseCase;
 
     @PostMapping("/create")
     /**
@@ -165,6 +171,63 @@ public class UserController {
         SuccessApiResponse<ProfileDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toProfileDto(user));
         return ResponseEntity.status(201).body(successApiResponse);
+    }
+
+    @PostMapping(value = "/profile-picture", consumes = "multipart/form-data")
+    @Operation(
+            method = "POST",
+            description = "Update user profile picture",
+            responses = {
+                    @ApiResponse(
+                            description = "Success with code 00",
+                            responseCode = "201"
+                    ),
+                    @ApiResponse(
+                            description = "User not found with code 01",
+                            responseCode = "404",
+                            content = {
+                                    @Content(
+                                            schema = @Schema(implementation = FailureApiResponse.class)
+                                    )
+                            }
+                    )
+            }
+    )
+    public ResponseEntity<SuccessApiResponse<String>> updateProfilePicture(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam("userId") String userId
+    ) {
+        logger.info("Update user profile picture request received");
+        UploadProfileAvatarCommand uploadProfileAvatarCommand = new UploadProfileAvatarCommand(file, userId);
+        String execute = uploadProfileAvatarUseCase.execute(uploadProfileAvatarCommand);
+        SuccessApiResponse<String> successApiResponse = new SuccessApiResponse<>();
+        successApiResponse.setData(execute);
+        return ResponseEntity.status(201).body(successApiResponse);
+    }
+
+    @GetMapping(value = "/profile/{userId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Operation(
+            method = "GET",
+            description = "Get user profile avatar by user id",
+            responses = {
+                    @ApiResponse(
+                            description = "Success with code 00",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "User not found with code 01",
+                            responseCode = "404",
+                            content = {
+                                    @Content(
+                                            schema = @Schema(implementation = FailureApiResponse.class)
+                                    )
+                            }
+                    )
+            }
+    )
+    public ResponseEntity<ByteArrayOutputStream> getProfileAvatar(@PathVariable("userId") String userId) {
+        ByteArrayOutputStream execute = profileAvatarUseCase.execute(userId);
+        return ResponseEntity.ok(execute);
     }
 
 }
