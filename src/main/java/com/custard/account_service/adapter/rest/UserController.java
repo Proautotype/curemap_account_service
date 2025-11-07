@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -205,7 +207,7 @@ public class UserController {
         return ResponseEntity.status(201).body(successApiResponse);
     }
 
-    @GetMapping(value = "/profile/{userId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/profile/avatar/{userId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @Operation(
             method = "GET",
             description = "Get user profile avatar by user id",
@@ -225,9 +227,26 @@ public class UserController {
                     )
             }
     )
-    public ResponseEntity<ByteArrayOutputStream> getProfileAvatar(@PathVariable("userId") String userId) {
-        ByteArrayOutputStream execute = profileAvatarUseCase.execute(userId);
-        return ResponseEntity.ok(execute);
+    public ResponseEntity<byte[]> getProfileAvatar(@PathVariable("userId") String userId) {
+        try {
+            ByteArrayOutputStream outputStream = profileAvatarUseCase.execute(userId);
+            byte[] fileContent = outputStream.toByteArray();
+
+            // Get content type from S3 metadata or use a default
+            String contentType = "image/jpeg"; // Default content type
+
+            // Set appropriate headers for file download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentLength(fileContent.length);
+            headers.setContentDispositionFormData("attachment", "profile-avatar");
+
+            return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("Error downloading profile avatar: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 }
