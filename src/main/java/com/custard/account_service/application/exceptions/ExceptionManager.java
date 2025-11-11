@@ -81,4 +81,32 @@ public class ExceptionManager extends ResponseEntityExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InaccurateInputException.class)
+    public ResponseEntity<FailureApiResponse<String>> handleInaccurateInputException(
+            InaccurateInputException exception,
+            WebRequest request
+    ){
+        FailureApiResponse<String> failureApiResponse = new FailureApiResponse<>();
+        failureApiResponse.setCode("01");
+        failureApiResponse.setMessage(exception.getMessage());
+        return new ResponseEntity<>(
+                failureApiResponse,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<FailureApiResponse<String>> handleAuthenticationException(
+            AuthenticationException authenticationException,
+            WebRequest request
+    ){
+        FailureApiResponse<String> failureApiResponse = new FailureApiResponse<>();
+        failureApiResponse.setCode("01");
+        failureApiResponse.setMessage(authenticationException.getMessage());
+        return new ResponseEntity<>(
+                failureApiResponse,
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
 }
