@@ -43,6 +43,7 @@ public class UserController {
     private final UploadProfileAvatarUseCase uploadProfileAvatarUseCase;
     private final DownloadProfileAvatarUseCase profileAvatarUseCase;
     private final LoginUseCase loginUseCase;
+    private final RefreshTokenUseCase refreshTokenUseCase;
 
     @PostMapping("/create")
     /*
@@ -113,6 +114,13 @@ public class UserController {
     public ResponseEntity<Map<String,Object>> login(@RequestBody LoginUserCommand command){
         logger.info("Login request received {} ", command);
         Map<String, Object> execute = loginUseCase.execute(command);
+        return ResponseEntity.ok(execute);
+    }
+
+    @PostMapping(value = "/refreshToken")
+    public ResponseEntity<Map<String,Object>> refreshToken(@RequestParam("token") String refreshToken){
+        logger.info("refresh token request received {} ", refreshToken);
+        Map<String, Object> execute = refreshTokenUseCase.execute(refreshToken);
         return ResponseEntity.ok(execute);
     }
 
