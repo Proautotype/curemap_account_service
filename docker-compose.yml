@@ -10,3 +10,45 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       Database: post
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  keycloak:
+    image: keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+#      KC_DB: postgres
+#      KC_DB_URL: jdbc:postgresql://localhost:5433/postgres
+#      KC_DB_USERNAME: admin
+#      KC_DB_PASSWORD: admin
+#      KC_HOSTNAME: localhost
+#      KC_HTTP_ENABLED: "true"
+#      KC_PROXY: edge
+    command: start-dev
+    ports:
+      - "8090:8080"
+      - "8443:8443"
+    depends_on:
+      - app_database
+    networks:
+      - accounts_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/realms/master" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  accounts_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

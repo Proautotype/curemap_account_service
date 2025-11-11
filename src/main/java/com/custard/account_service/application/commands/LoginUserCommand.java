@@ -2,7 +2,6 @@ package com.custard.account_service.application.commands;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,17 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class CreateUserCommand {
-    @NotNull
-    @Size(min = 4, max = 20)
-    private String username;
-    @NotNull
+public class LoginUserCommand {
     @Email
     private String email;
     @NotNull
     private String password;
-    @NotNull
-    private String firstName;
-    @NotNull
-    private String lastName;
 }

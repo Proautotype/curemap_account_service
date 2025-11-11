@@ -39,7 +39,8 @@ public class UserRepositoryImpl implements UserRepository {
             // create default profile for user
             ProfileEntity pe = new ProfileEntity();
             pe.setUser(ue);
-            pe.setFirstName(user.getUsername());
+            pe.setFirstName(user.getProfile().getFirstName());
+            pe.setLastName(user.getProfile().getLastName());
             jpaProfileEntityRepository.save(pe);
 
             return findById(ue.getId().toString());
@@ -70,7 +71,7 @@ public class UserRepositoryImpl implements UserRepository {
         logger.info("find a new user by ID");
         UserEntity user = jpaUserEntityRepository
                 .findById(UUID.fromString(id))
-                .orElseThrow(()-> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
         return userMapper.toUserModel(user);
     }
 
@@ -89,6 +90,7 @@ public class UserRepositoryImpl implements UserRepository {
             UserEntity user = jpaUserEntityRepository.findById(UUID.fromString(id)).orElseThrow();
             jpaUserEntityRepository.delete(user);
         } catch (RuntimeException e) {
+            logger.error(e.getLocalizedMessage(), e,e);
             throw new RuntimeException(e);
         }
     }
