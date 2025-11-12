@@ -13,7 +13,15 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
@@ -81,6 +89,71 @@ public class KeycloakUserService {
             throw new AuthenticationException("Authentication failed: " + e.getMessage());
         }
 
+    }
+
+    public Map<String, Object> refresh(String refreshToken) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            // Add logging to verify the refresh token
+            logger.info("Attempting to refresh token. Refresh token: {}",
+                    refreshToken != null ? refreshToken.substring(0, 10) + "..." : "null");
+
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("grant_type", "refresh_token");
+            params.add("client_id", config.getClientId());
+            params.add("client_secret", config.getClientSecret());
+            params.add("refresh_token", refreshToken);
+
+            String tokenUrl = String.format("%s/realms/%s/protocol/openid-connect/token",
+                    config.getAuthServerUrl().replaceAll("/$", ""),
+                    config.getRealm()
+            );
+
+            logger.info("Using token URL: {}", tokenUrl);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+            try {
+                // Log the full request for debugging
+                logger.debug("Sending request with params: client_id={}, grant_type=refresh_token",
+                        config.getClientId());
+
+                ResponseEntity<Map> response = restTemplate.postForEntity(
+                        tokenUrl,
+                        request,
+                        Map.class
+                );
+
+                Map responseBody = response.getBody();
+                logger.info("Token refresh successful");
+                return Map.of(
+                        "accessToken", responseBody.get("access_token"),
+                        "refreshToken", responseBody.get("refresh_token"),
+                        "expiresIn", responseBody.get("expires_in")
+                );
+
+            } catch (HttpClientErrorException e) {
+                logger.error("Token refresh failed with status {}: {}",
+                        e.getStatusCode(),
+                        e.getResponseBodyAsString());
+                throw new AuthenticationException("Failed to refresh token: " +
+                        (e.getResponseBodyAsString() != null ?
+                                e.getResponseBodyAsString() : e.getMessage()));
+            }
+
+        } catch (Exception e) {
+            logger.error("Token refresh error", e);
+            throw new AuthenticationException("Failed to refresh token: " + e.getMessage());
+        }
+    }
+
+    public Map update(String username, String password){
+
+        return null;
     }
 
     private KeycloakBuilder keycloakBuilder() {
