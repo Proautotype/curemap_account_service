@@ -151,6 +151,11 @@ public class KeycloakUserService {
         }
     }
 
+    public Map update(String username, String password){
+
+        return null;
+    }
+
     private KeycloakBuilder keycloakBuilder() {
         return KeycloakBuilder
                 .builder()

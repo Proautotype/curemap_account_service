@@ -45,6 +45,12 @@ public class UserController {
     private final LoginUseCase loginUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
 
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping(){
+        return ResponseEntity.ok("ping");
+    }
+
     @PostMapping("/create")
     /*
      * Creates a new user.
