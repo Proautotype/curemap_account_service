@@ -4,6 +4,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -24,23 +25,33 @@ public class AppS3Client {
                 s3Config.getSecretAccessKey()
         );
 
-        this.s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(s3Config.getRegion())    // ✅ Must match bucket region e.g. "us-east-1"
+        AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTPS))
-                .build();
+                .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTPS));
+
+        if (s3Config.getS3().getEndpoint() != null && !s3Config.getS3().getEndpoint().isEmpty() ) {
+            AwsClientBuilder.EndpointConfiguration endpointConfiguration
+                    = new AwsClientBuilder.EndpointConfiguration(
+                    s3Config.getS3().getEndpoint(),
+                    s3Config.getRegionAsString()
+            );
+            amazonS3ClientBuilder.setEndpointConfiguration(endpointConfiguration);
+        }else {
+            amazonS3ClientBuilder.withRegion(s3Config.getRegionAsString());
+        }
+        this.s3Client = amazonS3ClientBuilder.build();
     }
 
     public AmazonS3 getClient() {
         return s3Client;
     }
 
-    public void uploadFile(PutObjectRequest putObjectRequest){
+    public void uploadFile(PutObjectRequest putObjectRequest) {
         this.getClient().putObject(putObjectRequest);
     }
 
-    public String getBucket(){
-       return s3Config.getBucketName();
+    public String getBucket() {
+        return s3Config.getS3().getBucketName();
     }
 
 

@@ -162,11 +162,20 @@
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
-                <version>3.4.6</version>
+                <version>3.4.5</version>
                 <configuration>
+                    <from>
+                        <image>maven:3.9.4-eclipse-temurin-21</image>
+                    </from>
                     <to>
-                        <image>curemap/${project.name}:v1</image>
+                        <image>winstyngyen/curemap-account-service:1</image>
                     </to>
+                    <container>
+                        <mainClass>com.generis.Application</mainClass>
+                        <ports>
+                            <port>8080</port>
+                        </ports>
+                    </container>
                 </configuration>
             </plugin>
         </plugins>

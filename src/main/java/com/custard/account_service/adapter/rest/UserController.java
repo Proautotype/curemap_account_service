@@ -5,7 +5,9 @@ import com.custard.account_service.adapter.dto.UserDto;
 import com.custard.account_service.adapter.dto.reponses.FailureApiResponse;
 import com.custard.account_service.adapter.dto.reponses.SuccessApiResponse;
 import com.custard.account_service.adapter.mapper.Adapter_UserMapper;
-import com.custard.account_service.application.commands.*;
+import com.custard.account_service.application.commands.CreateProfileCommand;
+import com.custard.account_service.application.commands.UpdateUserCommand;
+import com.custard.account_service.application.commands.UploadProfileAvatarCommand;
 import com.custard.account_service.application.usecases.*;
 import com.custard.account_service.domain.models.Profile;
 import com.custard.account_service.domain.models.User;
@@ -25,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,99 +36,18 @@ public class UserController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final Adapter_UserMapper adapterUserMapper;
-    private final CreateUserUseCase createUserUseCase;
+
     private final UpdateUserUseCase updateUserUseCase;
     private final CreateProfileUseCase createProfileUsecase;
     private final FindUserByIdUseCase getUserUseCase;
     private final FindProfileByUserIdUseCase findProfileByUserIdUseCase;
     private final UploadProfileAvatarUseCase uploadProfileAvatarUseCase;
     private final DownloadProfileAvatarUseCase profileAvatarUseCase;
-    private final LoginUseCase loginUseCase;
-    private final RefreshTokenUseCase refreshTokenUseCase;
 
 
     @GetMapping("/ping")
     public ResponseEntity<String> ping(){
         return ResponseEntity.ok("ping");
-    }
-
-    @PostMapping("/create")
-    /*
-     * Creates a new user.
-     * @param command the create user command containing username and email.
-     * @return a response entity containing the created user.
-     */
-    @Operation(
-            method = "POST",
-            description = "Create a new user on the AccountService",
-            responses = {
-                    @ApiResponse(
-                            description = "Success with code 00",
-                            responseCode = "201"
-                    ),
-                    @ApiResponse(
-                            description = "User already exist with code 01",
-                            responseCode = "402"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server error with code 01",
-                            responseCode = "500",
-                            content = {
-                                    @Content(
-                                            schema = @Schema(implementation = FailureApiResponse.class)
-                                    )
-                            }
-                    )
-            }
-    )
-    public ResponseEntity<SuccessApiResponse<UserDto>> create(@RequestBody CreateUserCommand command) {
-        logger.info("Create user request received");
-        User user = createUserUseCase.execute(command);
-        SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
-        successApiResponse.setData(adapterUserMapper.toUserDto(user));
-        return ResponseEntity.status(201).body(successApiResponse);
-    }
-
-    @PostMapping(value = "/login")
-    @Operation(
-            method = "POST",
-            description = "Login to the AccountService",
-            responses = {
-                    @ApiResponse(
-                            description = "Success with code 00",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "User not found with code 01",
-                            responseCode = "404",
-                            content = {
-                                    @Content(
-                                            schema = @Schema(implementation = FailureApiResponse.class)
-                                    )
-                            }
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server error with code 01",
-                            responseCode = "500",
-                            content = {
-                                    @Content(
-                                            schema = @Schema(implementation = FailureApiResponse.class)
-                                    )
-                            }
-                    )
-            }
-    )
-    public ResponseEntity<Map<String,Object>> login(@RequestBody LoginUserCommand command){
-        logger.info("Login request received {} ", command);
-        Map<String, Object> execute = loginUseCase.execute(command);
-        return ResponseEntity.ok(execute);
-    }
-
-    @PostMapping(value = "/refreshToken")
-    public ResponseEntity<Map<String,Object>> refreshToken(@RequestParam("token") String refreshToken){
-        logger.info("refresh token request received {} ", refreshToken);
-        Map<String, Object> execute = refreshTokenUseCase.execute(refreshToken);
-        return ResponseEntity.ok(execute);
     }
 
     @GetMapping("/{userId}")
