@@ -57,5 +57,53 @@ jobs:
             -Djib.to.image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }} \
             -Djib.to.auth.username=${{ secrets.DOCKER_HUB_USERNAME }} \
             -Djib.to.auth.password=${{ secrets.DOCKER_HUB_TOKEN }} \
-        
-        
+  
+  
+
+  deploy:
+    name: Deploy to Linode
+    needs: push_image
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_REPO: ${{ secrets.DOCKER_HUB_USERNAME }}/account-service
+      IMAGE_TAG: ${{ github.sha }}
+      CONTAINER_NAME: account-service-app
+      HOST_PORT: 8080 # The port NGINX will reverse proxy to
+
+    steps:
+      - name: Deploy Container via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LINODE_IP_ADDRESS }}
+          username: deploy_user
+          port: 22
+          # --- IMPORTANT: Use the private key secret for authentication ---
+          key: ${{ secrets.LINODE_SSH_PRIVATE_KEY }}
+
+          script:
+            echo "Starting deployment script on Linode..."
+            
+            # 1. Log in to the Docker registry (e.g., Docker Hub)
+            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+            # 2. Pull the new image
+            IMAGE="${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
+#            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+            
+            # 3. Stop and remove the old container (if it exists)
+            # The '|| true' ensures the command doesn't fail if the container isn't running
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+
+            # 4. Run the new container, mapping the port
+            echo "Running new container on port ${{ env.HOST_PORT }}"
+            docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.HOST_PORT }}:8080 \
+            $IMAGE
+            
+            echo "Deployment complete. Container is running."
+
+
