@@ -79,7 +79,7 @@ public class UploadProfileAvatarUseCaseImpl implements UploadProfileAvatarUseCas
 //                logger.info("Bucket {} ", bucket.getName());
 //            });
 
-            appS3Client.getClient().putObject(s3Config.getBucketName(), objectKeyName, command.getAvatarFile().getInputStream(), objectMetadata);
+            appS3Client.getClient().putObject(s3Config.getS3().getBucketName(), objectKeyName, command.getAvatarFile().getInputStream(), objectMetadata);
             //  we assume file already exist
             // update user profile with keyName
             profileRepository.updateProfileAvatar(objectKeyName, command.getUserId());

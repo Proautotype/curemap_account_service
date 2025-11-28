@@ -6,7 +6,6 @@ import com.custard.account_service.adapter.dto.reponses.FailureApiResponse;
 import com.custard.account_service.adapter.dto.reponses.SuccessApiResponse;
 import com.custard.account_service.adapter.mapper.Adapter_UserMapper;
 import com.custard.account_service.application.commands.CreateProfileCommand;
-import com.custard.account_service.application.commands.CreateUserCommand;
 import com.custard.account_service.application.commands.UpdateUserCommand;
 import com.custard.account_service.application.commands.UploadProfileAvatarCommand;
 import com.custard.account_service.application.usecases.*;
@@ -20,6 +19,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,55 +30,25 @@ import java.io.ByteArrayOutputStream;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/account")
+@RequestMapping("/api/v1")
 @Tag(name = "UserController", description = "Contains apis to perform crud operation for accounts including user, profile and address")
 public class UserController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final Adapter_UserMapper adapterUserMapper;
-    private final CreateUserUseCase createUserUseCase;
+
     private final UpdateUserUseCase updateUserUseCase;
     private final CreateProfileUseCase createProfileUsecase;
     private final FindUserByIdUseCase getUserUseCase;
+    private final FindUserByEmailUseCase findUserByEmailUseCase;
     private final FindProfileByUserIdUseCase findProfileByUserIdUseCase;
     private final UploadProfileAvatarUseCase uploadProfileAvatarUseCase;
     private final DownloadProfileAvatarUseCase profileAvatarUseCase;
 
-    @PostMapping("/create")
-    /**
-     * Creates a new user.
-     * @param command the create user command containing username and email.
-     * @return a response entity containing the created user.
-     */
-    @Operation(
-            method = "POST",
-            description = "Create a new user on the AccountService",
-            responses = {
-                    @ApiResponse(
-                            description = "Success with code 00",
-                            responseCode = "201"
-                    ),
-                    @ApiResponse(
-                            description = "User already exist with code 01",
-                            responseCode = "402"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server error with code 01",
-                            responseCode = "500",
-                            content = {
-                                    @Content(
-                                            schema = @Schema(implementation = FailureApiResponse.class)
-                                    )
-                            }
-                    )
-            }
-    )
-    public ResponseEntity<SuccessApiResponse<UserDto>> create(@RequestBody CreateUserCommand command) {
-        logger.info("Create user request received");
-        User user = createUserUseCase.execute(command);
-        SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
-        successApiResponse.setData(adapterUserMapper.toUserDto(user));
-        return ResponseEntity.status(201).body(successApiResponse);
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping(){
+        return ResponseEntity.ok("ping");
     }
 
     @GetMapping("/{userId}")
@@ -105,7 +76,36 @@ public class UserController {
         User user = getUserUseCase.execute(userId);
         SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toUserDto(user));
-        return ResponseEntity.status(201).body(successApiResponse);
+        return ResponseEntity.status(200).body(successApiResponse);
+    }
+
+
+    @GetMapping("/users/{email}")
+    @Operation(
+            method = "GET",
+            description = "Get user details by email",
+            responses = {
+                    @ApiResponse(
+                            description = "Success with code 00",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "User not found with code 01",
+                            responseCode = "404",
+                            content = {
+                                    @Content(
+                                            schema = @Schema(implementation = FailureApiResponse.class)
+                                    )
+                            }
+                    )
+            }
+    )
+    public ResponseEntity<SuccessApiResponse<UserDto>> getAccountDetailsByEmail(@PathVariable("email") String email) {
+        logger.info("get user  by email : {} ", email);
+        User execute = findUserByEmailUseCase.execute(email);
+        SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
+        successApiResponse.setData(adapterUserMapper.toUserDto(execute));
+        return ResponseEntity.status(200).body(successApiResponse);
     }
 
     @PatchMapping("/update")
@@ -205,7 +205,7 @@ public class UserController {
         return ResponseEntity.status(201).body(successApiResponse);
     }
 
-    @GetMapping(value = "/profile/{userId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @GetMapping(value = "/profile/avatar/{userId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @Operation(
             method = "GET",
             description = "Get user profile avatar by user id",
@@ -225,9 +225,26 @@ public class UserController {
                     )
             }
     )
-    public ResponseEntity<ByteArrayOutputStream> getProfileAvatar(@PathVariable("userId") String userId) {
-        ByteArrayOutputStream execute = profileAvatarUseCase.execute(userId);
-        return ResponseEntity.ok(execute);
+    public ResponseEntity<byte[]> getProfileAvatar(@PathVariable("userId") String userId) {
+        try {
+            ByteArrayOutputStream outputStream = profileAvatarUseCase.execute(userId);
+            byte[] fileContent = outputStream.toByteArray();
+
+            // Get content type from S3 metadata or use a default
+            String contentType = "image/jpeg"; // Default content type
+
+            // Set appropriate headers for file download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentLength(fileContent.length);
+            headers.setContentDispositionFormData("attachment", "profile-avatar");
+
+            return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("Error downloading profile avatar: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 }

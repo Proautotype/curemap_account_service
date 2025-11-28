@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8080
 
 spring:
   application:
@@ -31,6 +31,13 @@ spring:
         max-idle: 8
         min-idle: 0
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
 eureka:
   instance:
     preferIpAddress: true
@@ -59,12 +66,14 @@ management:
     shutdown:
       enabled: true
 
-# S3 Configuration
 aws:
-  accessKeyId: "AKIARZYETDP3C6EGRZW3"
-  secretAccessKey: "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"
-  region: "us-east-1"
-  bucketName: "curemap-vault"
+  access-key-id: AKIARZYETDP3C6EGRZW3
+  secret-access-key: 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
+  region: us-east-1
+  s3:
+    bucket-name: curemap-vault
+    endpoint:
+    path-style-access: true
 
 #  AKIARZYETDP3C6EGRZW3
 # z8eDQuL9l17INhExCGIC97MjWLj4TEkeaveej/WG
@@ -84,3 +93,11 @@ files:
   fileLimits:
     maxImageSizeMB: 5_000_000    # 10MB per image
     maxAudioSizeMB: 50_000_000    # 50MB per audio file
+
+keycloak:
+  auth-server-url: http://localhost:8090
+  realm: curemap
+  client-id: curemap_authentication_app
+  client-secret: e8rmnM0WYF87HibrGmYCUzgPsAFG3f9T
+  admin-username: admin
+  admin-password: admin
