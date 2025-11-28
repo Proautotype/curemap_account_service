@@ -3,9 +3,11 @@ package com.custard.account_service.infrastructure.security;
 import com.custard.account_service.application.commands.CreateUserCommand;
 import com.custard.account_service.application.exceptions.AuthenticationException;
 import com.custard.account_service.infrastructure.config.security.KeycloakProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.AccessTokenResponse;
@@ -32,7 +34,9 @@ public class KeycloakUserService {
     private final Logger logger = LoggerFactory.getLogger(KeycloakUserService.class);
     private final Keycloak keycloak;
     private final KeycloakProperties config;
+    private final ObjectMapper objectMapper;
 
+    @SneakyThrows
     public void createUser(CreateUserCommand command) {
         logger.info("creating keycloak user  ");
         UserRepresentation user = getUserRepresentation(command);

@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      Database: post
+      Database: postgres
 
   redis:
     image: redis:latest

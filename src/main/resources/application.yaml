@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8080
 
 spring:
   application:
@@ -9,7 +9,7 @@ spring:
     url: jdbc:postgresql://localhost:5433/postgres
     driver-class-name: "org.postgresql.Driver"
     username: admin
-    password:
+    password: admin
   h2:
     console:
       enable: true
@@ -66,12 +66,14 @@ management:
     shutdown:
       enabled: true
 
-# S3 Configuration
 aws:
-  accessKeyId:
-  secretAccessKey:
-  region: "us-east-1"
-  bucketName: "curemap-vault"
+  access-key-id: AKIARZYETDP3C6EGRZW3
+  secret-access-key: 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
+  region: us-east-1
+  s3:
+    bucket-name: curemap-vault
+    endpoint:
+    path-style-access: true
 
 #  AKIARZYETDP3C6EGRZW3
 # z8eDQuL9l17INhExCGIC97MjWLj4TEkeaveej/WG
@@ -96,6 +98,6 @@ keycloak:
   auth-server-url: http://localhost:8090
   realm: curemap
   client-id: curemap_authentication_app
-  client-secret: x0zW5HdoyRMcSdKc0PluMXz8f2yTaAi7
+  client-secret: e8rmnM0WYF87HibrGmYCUzgPsAFG3f9T
   admin-username: admin
   admin-password: admin
