@@ -54,8 +54,12 @@ jobs:
 
         run: |
           mvn compile jib:build \
-            -Djib.to.image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+            -Djib.to.image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }} \
+            -Djib.to.auth.username=${{ secrets.DOCKER_HUB_USERNAME }} \
+            -Djib.to.auth.password=${{ secrets.DOCKER_HUB_TOKEN }} \
   
+  
+
   deploy:
     name: Deploy to Linode
     needs: push_image
