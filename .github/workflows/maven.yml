@@ -54,12 +54,8 @@ jobs:
 
         run: |
           mvn compile jib:build \
-            -Djib.to.image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }} \
-            -Djib.to.auth.username=${{ secrets.DOCKER_HUB_USERNAME }} \
-            -Djib.to.auth.password=${{ secrets.DOCKER_HUB_TOKEN }} \
+            -Djib.to.image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
   
-  
-
   deploy:
     name: Deploy to Linode
     needs: push_image
@@ -78,31 +74,23 @@ jobs:
           host: ${{ secrets.LINODE_IP_ADDRESS }}
           username: deploy_user
           port: 22
-          # --- IMPORTANT: Use the private key secret for authentication ---
           key: ${{ secrets.LINODE_SSH_PRIVATE_KEY }}
 
-          script:
+          script: |
             echo "Starting deployment script on Linode..."
-            
-            # 1. Log in to the Docker registry (e.g., Docker Hub)
             echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-
-            # 2. Pull the new image
-            IMAGE="${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
-#            echo "Pulling image: $IMAGE"
-            docker pull $IMAGE
             
-            # 3. Stop and remove the old container (if it exists)
-            # The '|| true' ensures the command doesn't fail if the container isn't running
+            IMAGE="${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
+            # Removed: docker pull $IMAGE 
+            
             docker stop ${{ env.CONTAINER_NAME }} || true
             docker rm ${{ env.CONTAINER_NAME }} || true
-
-            # 4. Run the new container, mapping the port
+            
             echo "Running new container on port ${{ env.HOST_PORT }}"
             docker run -d \
-            --name ${{ env.CONTAINER_NAME }} \
-            -p ${{ env.HOST_PORT }}:8080 \
-            $IMAGE
+              --name ${{ env.CONTAINER_NAME }} \
+              -p ${{ env.HOST_PORT }}:8080 \
+              $IMAGE # docker run pulls if local image is outdated or missing
             
             echo "Deployment complete. Container is running."
 
