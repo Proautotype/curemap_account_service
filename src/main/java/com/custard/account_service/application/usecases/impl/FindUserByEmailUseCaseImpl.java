@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -17,12 +16,8 @@ public class FindUserByEmailUseCaseImpl implements FindUserByEmailUseCase {
     private final Logger logger = LoggerFactory.getLogger(FindUserByEmailUseCaseImpl.class);
 
     @Override
-    public Mono<User> execute(String command) {
+    public User execute(String command) {
         logger.info("finding user by email {} ", command);
-        return Mono
-                .fromCallable(() -> userRepository.findByEmail(command))
-                .doOnSuccess((user -> {
-                    logger.info("finding user by email ");
-                }));
+        return userRepository.findByEmail(command);
     }
 }

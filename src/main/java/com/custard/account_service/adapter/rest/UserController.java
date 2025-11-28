@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayOutputStream;
 
@@ -40,6 +41,7 @@ public class UserController {
     private final UpdateUserUseCase updateUserUseCase;
     private final CreateProfileUseCase createProfileUsecase;
     private final FindUserByIdUseCase getUserUseCase;
+    private final FindUserByEmailUseCase findUserByEmailUseCase;
     private final FindProfileByUserIdUseCase findProfileByUserIdUseCase;
     private final UploadProfileAvatarUseCase uploadProfileAvatarUseCase;
     private final DownloadProfileAvatarUseCase profileAvatarUseCase;
@@ -75,7 +77,36 @@ public class UserController {
         User user = getUserUseCase.execute(userId);
         SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toUserDto(user));
-        return ResponseEntity.status(201).body(successApiResponse);
+        return ResponseEntity.status(200).body(successApiResponse);
+    }
+
+
+    @GetMapping("/users/{email}")
+    @Operation(
+            method = "GET",
+            description = "Get user details by email",
+            responses = {
+                    @ApiResponse(
+                            description = "Success with code 00",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "User not found with code 01",
+                            responseCode = "404",
+                            content = {
+                                    @Content(
+                                            schema = @Schema(implementation = FailureApiResponse.class)
+                                    )
+                            }
+                    )
+            }
+    )
+    public ResponseEntity<SuccessApiResponse<UserDto>> getAccountDetailsByEmail(@PathVariable("email") String email) {
+        logger.info("get user  by email : {} ", email);
+        User execute = findUserByEmailUseCase.execute(email);
+        SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
+        successApiResponse.setData(adapterUserMapper.toUserDto(execute));
+        return ResponseEntity.status(200).body(successApiResponse);
     }
 
     @PatchMapping("/update")
