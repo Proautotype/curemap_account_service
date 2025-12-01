@@ -3,13 +3,18 @@ server:
 
 spring:
   application:
-    name: ACCOUNTS
+    name: "accounts"
+
+  config:
+    import: "optional:configserver:http://localhost:8050/"
+#    import: "configserver:http://localhost:8050/"
 
   datasource:
     url: jdbc:postgresql://localhost:5433/postgres
     driver-class-name: "org.postgresql.Driver"
     username: admin
     password: admin
+
   h2:
     console:
       enable: true

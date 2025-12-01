@@ -1,5 +1,6 @@
 package com.custard.account_service.adapter.rest;
 
+import com.custard.account_service.adapter.dto.AppInfo;
 import com.custard.account_service.adapter.dto.ProfileDto;
 import com.custard.account_service.adapter.dto.UserDto;
 import com.custard.account_service.adapter.dto.reponses.FailureApiResponse;
@@ -11,14 +12,14 @@ import com.custard.account_service.application.commands.UploadProfileAvatarComma
 import com.custard.account_service.application.usecases.*;
 import com.custard.account_service.domain.models.Profile;
 import com.custard.account_service.domain.models.User;
+import com.custard.account_service.infrastructure.config.AppInfoConfiguration;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,9 +33,10 @@ import java.io.ByteArrayOutputStream;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 @Tag(name = "UserController", description = "Contains apis to perform crud operation for accounts including user, profile and address")
+@Slf4j
 public class UserController {
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+//    private final log log = logFactory.getlog(this.getClass().getName());
     private final Adapter_UserMapper adapterUserMapper;
 
     private final UpdateUserUseCase updateUserUseCase;
@@ -45,10 +47,22 @@ public class UserController {
     private final UploadProfileAvatarUseCase uploadProfileAvatarUseCase;
     private final DownloadProfileAvatarUseCase profileAvatarUseCase;
 
+    private final AppInfoConfiguration appInfoConfiguration;
 
     @GetMapping("/ping")
     public ResponseEntity<String> ping(){
         return ResponseEntity.ok("ping");
+    }
+
+    @GetMapping("/version")
+    public ResponseEntity<AppInfo> version(){
+        AppInfo appInfo = new AppInfo(
+                appInfoConfiguration.getMode(),
+                appInfoConfiguration.getMessage(),
+                appInfoConfiguration.getContactDetails().getName()
+        );
+        log.info("app info {} ", appInfo);
+        return ResponseEntity.ok(appInfo);
     }
 
     @GetMapping("/{userId}")
@@ -72,7 +86,7 @@ public class UserController {
             }
     )
     public ResponseEntity<SuccessApiResponse<UserDto>> getAccountDetails(@PathVariable("userId") String userId) {
-        logger.info("get user request received by id : {} ", userId);
+        log.info("get user request received by id : {} ", userId);
         User user = getUserUseCase.execute(userId);
         SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toUserDto(user));
@@ -101,7 +115,7 @@ public class UserController {
             }
     )
     public ResponseEntity<SuccessApiResponse<UserDto>> getAccountDetailsByEmail(@PathVariable("email") String email) {
-        logger.info("get user  by email : {} ", email);
+        log.info("get user  by email : {} ", email);
         User execute = findUserByEmailUseCase.execute(email);
         SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toUserDto(execute));
@@ -110,7 +124,7 @@ public class UserController {
 
     @PatchMapping("/update")
     public ResponseEntity<SuccessApiResponse<UserDto>> update(UpdateUserCommand command) {
-        logger.info("Update user request received");
+        log.info("Update user request received");
         User user = updateUserUseCase.execute(command);
         SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toUserDto(user));
@@ -138,7 +152,7 @@ public class UserController {
             }
     )
     public ResponseEntity<SuccessApiResponse<UserDto>> addUserProfile(@RequestBody CreateProfileCommand command) {
-        logger.info("create profile user request received");
+        log.info("create profile user request received");
         User user = createProfileUsecase.execute(command);
         SuccessApiResponse<UserDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toUserDto(user));
@@ -166,7 +180,7 @@ public class UserController {
             }
     )
     public ResponseEntity<SuccessApiResponse<ProfileDto>> getProfileByUserId(@PathVariable("userId") String userId) {
-        logger.info("Finding user profile by id -> {} ", userId);
+        log.info("Finding user profile by id -> {} ", userId);
         Profile user = findProfileByUserIdUseCase.execute(userId);
         SuccessApiResponse<ProfileDto> successApiResponse = new SuccessApiResponse<>();
         successApiResponse.setData(adapterUserMapper.toProfileDto(user));
@@ -197,7 +211,7 @@ public class UserController {
             @RequestPart("file") MultipartFile file,
             @RequestParam("userId") String userId
     ) {
-        logger.info("Update user profile picture request received");
+        log.info("Update user profile picture request received");
         UploadProfileAvatarCommand uploadProfileAvatarCommand = new UploadProfileAvatarCommand(file, userId);
         String execute = uploadProfileAvatarUseCase.execute(uploadProfileAvatarCommand);
         SuccessApiResponse<String> successApiResponse = new SuccessApiResponse<>();
@@ -242,7 +256,7 @@ public class UserController {
             return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
 
         } catch (Exception e) {
-            logger.error("Error downloading profile avatar: {}", e.getMessage(), e);
+            log.error("Error downloading profile avatar: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
